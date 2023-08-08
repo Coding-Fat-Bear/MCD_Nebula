@@ -20,6 +20,7 @@ export default function supernova(galaxy) {
       // const [selected, setSelected] = useState([element,layout]);
       async function buildData() {
           //first will will need to get sheet list in array
+          console.log();
           let sheetList = await app.getAllInfos().then(value => value.filter((x)=> x.qType === 'sheet'));
           const sheetListPromises =  sheetList.map(sheet=> app.getObject(sheet.qId));
           const sheetListObj = await Promise.all(sheetListPromises);
@@ -174,6 +175,8 @@ export default function supernova(galaxy) {
           buttonContainer.appendChild(hideTypeButton);
           buttonContainer.appendChild(exportbutton);
           const tableContainer = document.createElement('div');
+          tableContainer.style.overflowX = 'auto'; // Enable horizontal scrolling if necessary
+tableContainer.style.maxHeight = '100%'; 
           element.appendChild(buttonContainer);
           element.appendChild(tableContainer);
           const header = `<thead><th scope="col">Selected</th>
