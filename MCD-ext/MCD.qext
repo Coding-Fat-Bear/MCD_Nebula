@@ -1,0 +1,12 @@
+{
+  "name": "MCD",
+  "version": "0.1.0",
+  "description": "",
+  "author": {
+    "name": "Coding-Fat-Bear",
+    "email": "lijoepeter.15@gmail.com"
+  },
+  "icon": "extension",
+  "type": "visualization",
+  "supernova": true
+}
