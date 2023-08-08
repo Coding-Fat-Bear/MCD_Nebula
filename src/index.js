@@ -176,7 +176,7 @@ export default function supernova(galaxy) {
           buttonContainer.appendChild(exportbutton);
           const tableContainer = document.createElement('div');
           tableContainer.style.overflowX = 'auto'; // Enable horizontal scrolling if necessary
-tableContainer.style.maxHeight = '100%'; 
+tableContainer.style.maxHeight = '90%'; 
           element.appendChild(buttonContainer);
           element.appendChild(tableContainer);
           const header = `<thead><th scope="col">Selected</th>
