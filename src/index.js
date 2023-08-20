@@ -26,13 +26,24 @@ export default function supernova(galaxy) {
           const sheetListObj = await Promise.all(sheetListPromises);
           const sheetListLayoutPromise =  sheetListObj.map(sheetObj => sheetObj.getLayout());
           const sheetListLayout = await Promise.all(sheetListLayoutPromise);
-          // console.log(sheetListLayout.qMeta.title);
-          sheetListLayout.map(layout=> {layout.qChildList.qItems.map(arr => {if (arr.qInfo.qType !== 'MCD') {sheetObj.push({qId:arr.qInfo.qId,
-                                                                                          qType:arr.qInfo.qType,
-                                                                                          sheet:layout.qMeta.title,
-                                                                                          published:layout.qMeta.published,
-                                                                                          selected:true
-                                                                                                        })}})})
+          console.log(sheetListLayout);
+          sheetListLayout.map(layout=> {
+            layout.qChildList.qItems.map(arr => {
+              let qtitle;
+              if (arr.qInfo.qType !== 'MCD') {
+                if(arr.qData.title) { qtitle = arr.qData.title}else{ qtitle = arr.qInfo.qId}
+                sheetObj.push({
+                              qId:arr.qInfo.qId,
+                              qTitle: qtitle,
+                              qType:arr.qInfo.qType,
+                              sheet:layout.qMeta.title,
+                              published:layout.qMeta.published,
+                              selected:true
+                })
+              }
+            })
+          })
+          sheetObj.sort((a, b) => a.sheet.localeCompare(b.sheet));                                                                                             
            return sheetObj;                                                                                          
         }   
         
@@ -180,7 +191,7 @@ tableContainer.style.maxHeight = '90%';
           element.appendChild(buttonContainer);
           element.appendChild(tableContainer);
           const header = `<thead><th scope="col">Selected</th>
-                          <th scope="col"> ID</th>
+                          <th scope="col"> Title</th>
                           <th scope="col"> Sheet</th>
                           <th scope="col"> Type</th>
                           <th  scope="col"> Published</th></tr>
@@ -195,9 +206,9 @@ tableContainer.style.maxHeight = '90%';
             //                       </tr>`).join(''); 
             const rows = sheetArray
                             .map((row) => `<tr data-qid="${row.qId}">
-                              <td><input class="form-check-input"
+                              <td><input 
                                 type="checkbox" value=${row.selected} id=${row.qId}></td>
-                              <td>${row.qId}</td>
+                              <td>${row.qTitle}</td>
                               <td>${row.sheet}</td>
                               <td>${row.qType}</td>
                               <td>${row.published}</td>

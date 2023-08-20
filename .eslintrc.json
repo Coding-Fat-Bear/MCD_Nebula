@@ -6,7 +6,7 @@
   "parserOptions": {
     "sourceType": "module"
   },
-  "extends": ["airbnb-base"],
+  "extends": [""],
   "rules": {
     "max-len": 0,
     "no-plusplus": 0,
