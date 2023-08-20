@@ -1,5 +1,5 @@
 
-import { useLayout, useElement, useEffect, useApp} from '@nebula.js/stardust';
+import { useLayout, useElement, useApp} from '@nebula.js/stardust';
 import properties from './object-properties';
 import data from './data';
 import ext from './ext';
@@ -16,34 +16,60 @@ export default function supernova(galaxy) {
       const layout = useLayout();
       const app = useApp();
       const sheetObj =[];
-      
-      // const [selected, setSelected] = useState([element,layout]);
+
+      function saveCheckboxStates() {
+        const checkboxStates = {};
+        const checkboxes = element.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach((checkbox) => {
+          checkboxStates[checkbox.id] = checkbox.checked;
+        });
+         localStorage.setItem('checkboxStates', JSON.stringify(checkboxStates));
+         console.log(checkboxStates);
+         console.log("saved");
+      }
       async function buildData() {
-          //first will will need to get sheet list in array
-          console.log();
+        let storedData
+        if(localStorage.getItem('checkboxStates')){
+           storedData = await JSON.parse(localStorage.getItem('checkboxStates'));
+        }else{
+           storedData= false;
+        }
+        
           let sheetList = await app.getAllInfos().then(value => value.filter((x)=> x.qType === 'sheet'));
           const sheetListPromises =  sheetList.map(sheet=> app.getObject(sheet.qId));
           const sheetListObj = await Promise.all(sheetListPromises);
           const sheetListLayoutPromise =  sheetListObj.map(sheetObj => sheetObj.getLayout());
           const sheetListLayout = await Promise.all(sheetListLayoutPromise);
-          console.log(sheetListLayout);
           sheetListLayout.map(layout=> {
             layout.qChildList.qItems.map(arr => {
               let qtitle;
               if (arr.qInfo.qType !== 'MCD') {
                 if(arr.qData.title) { qtitle = arr.qData.title}else{ qtitle = arr.qInfo.qId}
-                sheetObj.push({
-                              qId:arr.qInfo.qId,
-                              qTitle: qtitle,
-                              qType:arr.qInfo.qType,
-                              sheet:layout.qMeta.title,
-                              published:layout.qMeta.published,
-                              selected:true
-                })
+                if(storedData.hasOwnProperty(arr.qInfo.qId)){
+                  console.log("has property");
+                  sheetObj.push({
+                    qId:arr.qInfo.qId,
+                    qTitle:qtitle,
+                    qType:arr.qInfo.qType,
+                    sheet:layout.qMeta.title,
+                    published:layout.qMeta.published,
+                    selected:storedData[arr.qInfo.qId]?"checked":""
+                    })
+                }else{
+                  sheetObj.push({
+                    qId:arr.qInfo.qId,
+                    qTitle:qtitle,
+                    qType:arr.qInfo.qType,
+                    sheet:layout.qMeta.title,
+                    published:layout.qMeta.published,
+                    selected:false
+                    })
+                }
               }
             })
           })
-          sheetObj.sort((a, b) => a.sheet.localeCompare(b.sheet));                                                                                             
+          sheetObj.sort((a, b) => a.sheet.localeCompare(b.sheet));   
+          console.log(sheetObj);                                                                                          
            return sheetObj;                                                                                          
         }   
         
@@ -112,7 +138,6 @@ export default function supernova(galaxy) {
                         }
                       }
                     });
-
                     // Toggle the visibility state
                     publishedVisible = !publishedVisible;
                   });
@@ -187,7 +212,7 @@ export default function supernova(galaxy) {
           buttonContainer.appendChild(exportbutton);
           const tableContainer = document.createElement('div');
           tableContainer.style.overflowX = 'auto'; // Enable horizontal scrolling if necessary
-tableContainer.style.maxHeight = '90%'; 
+        tableContainer.style.maxHeight = '90%'; 
           element.appendChild(buttonContainer);
           element.appendChild(tableContainer);
           const header = `<thead><th scope="col">Selected</th>
@@ -197,17 +222,10 @@ tableContainer.style.maxHeight = '90%';
                           <th  scope="col"> Published</th></tr>
                         </thead>`;
             const sheetArray = await buildData()
-            // const rows = sheetArray
-            //         .map((row) => `<tr id=${row.qId} ><td><input class="form-check-input"
-            //                        type="checkbox" value=${row.selected} id=${row.qId} ></td>
-            //                           <td>${row.qId}</td>
-            //                           <td>${row.qType}</td>
-            //                           <td>${row.published}</td>
-            //                       </tr>`).join(''); 
             const rows = sheetArray
                             .map((row) => `<tr data-qid="${row.qId}">
                               <td><input 
-                                type="checkbox" value=${row.selected} id=${row.qId}></td>
+                                type="checkbox" value=${row.selected} id=${row.qId} ${row.selected}></td>
                               <td>${row.qTitle}</td>
                               <td>${row.sheet}</td>
                               <td>${row.qType}</td>
@@ -221,8 +239,9 @@ tableContainer.style.maxHeight = '90%';
           const correspondingRow = sheetObj.find(row => row.qId === checkbox.id);
           if (correspondingRow) {
             checkbox.addEventListener('click', () => {
-              // Update the selected value in sheetObj
+              saveCheckboxStates()
               correspondingRow.selected = checkbox.checked;
+              
              });
           }
         });
