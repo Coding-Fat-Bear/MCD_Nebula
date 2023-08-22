@@ -89,7 +89,7 @@ export default function supernova(galaxy) {
                   : prefix)
             );
           };
-          let exportData = function (arr) {
+          let exportData =  function (arr) {
             
             arr.forEach(function (object) {
               console.log(object);
@@ -100,11 +100,23 @@ export default function supernova(galaxy) {
                     "/qHyperCubeDef",
                     "" 
                   )
-                  .then(function (retVal) {
+                  .then(async function (retVal) {
                     var qUrl = retVal.result ? retVal.result.qUrl : retVal.qUrl;
-                    var link = getBasePath() + qUrl;
-                    console.log("Tesing "+link);
-                    // window.open(link);
+                    var link = getBasePath() + qUrl;// Replace with your Excel file URL
+                  const response = await fetch(link);
+                  const blob = await response.blob();
+                  const newBlob = new Blob([blob], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                  //  newBlob.download  = 'custom_filename.xlsx';
+                  const newBlobUrl = URL.createObjectURL(newBlob);
+                  const downloadLink = document.createElement('a');
+                  downloadLink.href = newBlobUrl;
+                  if (object.qTitle) {
+                    downloadLink.download = object.qTitle+'.xlsx';
+                  }else{
+                    downloadLink.download = object.qId+'.xlsx';
+                  }
+                  downloadLink.click();
+                  URL.revokeObjectURL(newBlobUrl);
                   })
                   .catch(function (err) {
                     console.log(err);
@@ -201,20 +213,20 @@ export default function supernova(galaxy) {
                   selectAllToggle = !selectAllToggle;
                 });
               
-                async function test(){
-                  const fileUrl = "http://localhost:4848/Exports/6ad9cff4-81e3-4feb-942e-c462f7e1fde4/6f37cec8-eda3-4bd8-9768-80b29955971c.xlsx"; // Replace with your Excel file URL
-                  const response = await fetch(fileUrl);
-                  const blob = await response.blob();
-                  const newBlob = new Blob([blob], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-                   newBlob.download  = 'custom_filename.xlsx';
-                  const newBlobUrl = URL.createObjectURL(newBlob);
-                  const link = document.createElement('a');
-                  link.href = newBlobUrl;
-                  link.download = 'custom_filename.xlsx';
-                  link.click();
-                  URL.revokeObjectURL(newBlobUrl);
-                  // document.body.removeChild(link);
-                }
+                // async function test(){
+                //   const fileUrl = "http://localhost:4848/Exports/6ad9cff4-81e3-4feb-942e-c462f7e1fde4/6f37cec8-eda3-4bd8-9768-80b29955971c.xlsx"; // Replace with your Excel file URL
+                //   const response = await fetch(fileUrl);
+                //   const blob = await response.blob();
+                //   const newBlob = new Blob([blob], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                //    newBlob.download  = 'custom_filename.xlsx';
+                //   const newBlobUrl = URL.createObjectURL(newBlob);
+                //   const link = document.createElement('a');
+                //   link.href = newBlobUrl;
+                //   link.download = 'custom_filename.xlsx';
+                //   link.click();
+                //   URL.revokeObjectURL(newBlobUrl);
+                //   // document.body.removeChild(link);
+                // }
 
                 const testbutton = document.createElement('button');
                 testbutton.textContent = 'test';
@@ -224,7 +236,7 @@ export default function supernova(galaxy) {
                     });     
 
           const buttonContainer = document.createElement('div');
-          buttonContainer.appendChild(testbutton);
+          // buttonContainer.appendChild(testbutton);
           buttonContainer.appendChild(toggleAllButton);
           buttonContainer.appendChild(togglePublishedButton); 
           buttonContainer.appendChild(hideTypeButton);
