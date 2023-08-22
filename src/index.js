@@ -16,6 +16,7 @@ export default function supernova(galaxy) {
       const layout = useLayout();
       const app = useApp();
       const sheetObj =[];
+      let selectAllToggle = true;
 
       function saveCheckboxStates() {
         const checkboxStates = {};
@@ -24,8 +25,6 @@ export default function supernova(galaxy) {
           checkboxStates[checkbox.id] = checkbox.checked;
         });
          localStorage.setItem('checkboxStates', JSON.stringify(checkboxStates));
-         console.log(checkboxStates);
-         console.log("saved");
       }
       async function buildData() {
         let storedData
@@ -34,7 +33,6 @@ export default function supernova(galaxy) {
         }else{
            storedData= false;
         }
-        
           let sheetList = await app.getAllInfos().then(value => value.filter((x)=> x.qType === 'sheet'));
           const sheetListPromises =  sheetList.map(sheet=> app.getObject(sheet.qId));
           const sheetListObj = await Promise.all(sheetListPromises);
@@ -46,14 +44,13 @@ export default function supernova(galaxy) {
               if (arr.qInfo.qType !== 'MCD') {
                 if(arr.qData.title) { qtitle = arr.qData.title}else{ qtitle = arr.qInfo.qId}
                 if(storedData.hasOwnProperty(arr.qInfo.qId)){
-                  console.log("has property");
                   sheetObj.push({
                     qId:arr.qInfo.qId,
                     qTitle:qtitle,
                     qType:arr.qInfo.qType,
                     sheet:layout.qMeta.title,
                     published:layout.qMeta.published,
-                    selected:storedData[arr.qInfo.qId]?"checked":""
+                    selected:storedData[arr.qInfo.qId]?"checked":false
                     })
                 }else{
                   sheetObj.push({
@@ -68,14 +65,11 @@ export default function supernova(galaxy) {
               }
             })
           })
-          sheetObj.sort((a, b) => a.sheet.localeCompare(b.sheet));   
-          console.log(sheetObj);                                                                                          
+          sheetObj.sort((a, b) => a.sheet.localeCompare(b.sheet));                                                                
            return sheetObj;                                                                                          
         }   
-        
         async function renderTable() { 
           if (layout.qSelectionInfo.qInSelections) {
-            // skip rendering when in selection mode
             return;
           }
           element.innerHTML ="";
@@ -98,7 +92,8 @@ export default function supernova(galaxy) {
           let exportData = function (arr) {
             
             arr.forEach(function (object) {
-              app.getObject(object).then((model) => {
+              console.log(object);
+              app.getObject(object.qId).then((model) => {
                 model
                   .exportData(
                     "OOXML",
@@ -108,7 +103,8 @@ export default function supernova(galaxy) {
                   .then(function (retVal) {
                     var qUrl = retVal.result ? retVal.result.qUrl : retVal.qUrl;
                     var link = getBasePath() + qUrl;
-                    window.open(link);
+                    console.log("Tesing "+link);
+                    // window.open(link);
                   })
                   .catch(function (err) {
                     console.log(err);
@@ -122,23 +118,22 @@ export default function supernova(galaxy) {
 
           const togglePublishedButton = document.createElement('button');
                   togglePublishedButton.textContent = 'Toggle Published';
-                  togglePublishedButton.classList.add('btn', 'btn-secondary'); // Add the class
+                  togglePublishedButton.classList.add('btn', 'btn-secondary');
                   togglePublishedButton.style.marginRight = '2px'; 
-                  let publishedVisible = true; // Track the visibility state
+                  let publishedVisible = true; 
 
                   togglePublishedButton.addEventListener('click', () => {
                     const tableBody = element.querySelector('tbody');
                     sheetObj.forEach(row => {
-                      const rowElement = tableBody.querySelector(`tr[data-qid="${row.qId}"]`); // Use attribute selector
+                      const rowElement = tableBody.querySelector(`tr[data-qid="${row.qId}"]`);
                       if (rowElement) {
                         if (row.published) {
-                          rowElement.style.display = ''; // Always show unpublished rows
+                          rowElement.style.display = '';
                         } else {
-                          rowElement.style.display = publishedVisible ? 'none' : ''; // Toggle visibility of published rows
+                          rowElement.style.display = publishedVisible ? 'none' : '';
                         }
                       }
                     });
-                    // Toggle the visibility state
                     publishedVisible = !publishedVisible;
                   });
                   const exportbutton = document.createElement('button');
@@ -152,13 +147,14 @@ export default function supernova(galaxy) {
                                   if (correspondingRow && checkbox.checked) {
                                       const rowElement = element.querySelector(`tr[data-qid="${correspondingRow.qId}"]`);
                                       if (rowElement && rowElement.style.display !== 'none') {
-                                          exportID.push(correspondingRow.qId);
+                                          exportID.push(correspondingRow);
                                       }
                                   }
                               });
-                                console.log(exportID);
                                 exportData(exportID);
                           });
+                    
+
 
                 const hideTypeButton = document.createElement('button');
                 hideTypeButton.textContent = 'Toggle Non-Tables';
@@ -198,21 +194,45 @@ export default function supernova(galaxy) {
                   checkboxes.forEach(checkbox => {
                     const correspondingRow = sheetObj.find(row => row.qId === checkbox.id);
                     if (correspondingRow) {
-                      checkbox.checked = !checkbox.checked;
-                      correspondingRow.selected = checkbox.checked;
+                        checkbox.checked = selectAllToggle;
+                        correspondingRow.selected = checkbox.checked;
                     }
                   });
+                  selectAllToggle = !selectAllToggle;
                 });
               
+                async function test(){
+                  const fileUrl = "http://localhost:4848/Exports/6ad9cff4-81e3-4feb-942e-c462f7e1fde4/6f37cec8-eda3-4bd8-9768-80b29955971c.xlsx"; // Replace with your Excel file URL
+                  const response = await fetch(fileUrl);
+                  const blob = await response.blob();
+                  const newBlob = new Blob([blob], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                   newBlob.download  = 'custom_filename.xlsx';
+                  const newBlobUrl = URL.createObjectURL(newBlob);
+                  const link = document.createElement('a');
+                  link.href = newBlobUrl;
+                  link.download = 'custom_filename.xlsx';
+                  link.click();
+                  URL.revokeObjectURL(newBlobUrl);
+                  // document.body.removeChild(link);
+                }
+
+                const testbutton = document.createElement('button');
+                testbutton.textContent = 'test';
+                testbutton.style.marginLeft = '5px'; 
+                testbutton.addEventListener('click', () => {
+                      test()
+                    });     
 
           const buttonContainer = document.createElement('div');
+          buttonContainer.appendChild(testbutton);
           buttonContainer.appendChild(toggleAllButton);
           buttonContainer.appendChild(togglePublishedButton); 
           buttonContainer.appendChild(hideTypeButton);
           buttonContainer.appendChild(exportbutton);
+          
           const tableContainer = document.createElement('div');
           tableContainer.style.overflowX = 'auto'; // Enable horizontal scrolling if necessary
-        tableContainer.style.maxHeight = '90%'; 
+          tableContainer.style.maxHeight = '90%'; 
           element.appendChild(buttonContainer);
           element.appendChild(tableContainer);
           const header = `<thead><th scope="col">Selected</th>
@@ -224,7 +244,7 @@ export default function supernova(galaxy) {
             const sheetArray = await buildData()
             const rows = sheetArray
                             .map((row) => `<tr data-qid="${row.qId}">
-                              <td><input 
+                              <td><input class='form-check-input'
                                 type="checkbox" value=${row.selected} id=${row.qId} ${row.selected}></td>
                               <td>${row.qTitle}</td>
                               <td>${row.sheet}</td>
@@ -245,10 +265,8 @@ export default function supernova(galaxy) {
              });
           }
         });
-    
       }
         renderTable();
     },
-    
   };
 }
