@@ -17,7 +17,7 @@ export default function supernova(galaxy) {
       const app = useApp();
       const sheetObj =[];
       let selectAllToggle = true;
-
+      let storedData
       function saveCheckboxStates() {
         const checkboxStates = {};
         const checkboxes = element.querySelectorAll('input[type="checkbox"]');
@@ -27,7 +27,7 @@ export default function supernova(galaxy) {
          localStorage.setItem('checkboxStates', JSON.stringify(checkboxStates));
       }
       async function buildData() {
-        let storedData
+       
         if(localStorage.getItem('checkboxStates')){
            storedData = await JSON.parse(localStorage.getItem('checkboxStates'));
         }else{
@@ -38,10 +38,10 @@ export default function supernova(galaxy) {
           const sheetListObj = await Promise.all(sheetListPromises);
           const sheetListLayoutPromise =  sheetListObj.map(sheetObj => sheetObj.getLayout());
           const sheetListLayout = await Promise.all(sheetListLayoutPromise);
-          sheetListLayout.map(layout=> {
-            layout.qChildList.qItems.map(arr => {
+          for (const layout of sheetListLayout) {
+            for (const arr of layout.qChildList.qItems) {
               let qtitle;
-              if (arr.qInfo.qType !== 'MCD') {
+              if (arr.qInfo.qType !== 'MCD' && arr.qInfo.qType !== 'container') {
                 if(arr.qData.title) { qtitle = arr.qData.title}else{ qtitle = arr.qInfo.qId}
                 if(storedData.hasOwnProperty(arr.qInfo.qId)){
                   sheetObj.push({
@@ -62,12 +62,52 @@ export default function supernova(galaxy) {
                     selected:false
                     })
                 }
-              }
-            })
-          })
+              }else if (arr.qInfo.qType === 'container') {
+                await findContainer(arr,layout);
+            }        
+          }}
+            
           sheetObj.sort((a, b) => a.sheet.localeCompare(b.sheet));                                                                
            return sheetObj;                                                                                          
         }   
+
+        async function findContainer(arr,layout) {
+          const container = await app.getObject(arr.qInfo.qId);
+          const childInfos = await container.getChildInfos();
+          const containerObjPromises = childInfos.map(child => app.getObject(child.qId).then(obj => obj.getLayout()));
+          const containerObjLayouts = await Promise.all(containerObjPromises);
+  
+          for (const containerLayout of containerObjLayouts) {
+              let qtitle;
+  
+              if (containerLayout.title) {
+                  qtitle = "container " + containerLayout.title;
+              } else {
+                  qtitle = "container " + containerLayout.qInfo.qType;
+              }
+  
+              if (storedData.hasOwnProperty(containerLayout.qInfo.qId)) {
+                  sheetObj.push({
+                      qId: containerLayout.qInfo.qId,
+                      qTitle: qtitle,
+                      qType: containerLayout.qInfo.qType,
+                      sheet: layout.qMeta.title,
+                      published: layout.qMeta.published,
+                      selected: storedData[containerLayout.qInfo.qId] ? "checked" : false
+                  });
+              } else {
+                  sheetObj.push({
+                      qId: containerLayout.qInfo.qId,
+                      qTitle: qtitle,
+                      qType: containerLayout.qInfo.qType,
+                      sheet: layout.qMeta.title,
+                      published: layout.qMeta.published,
+                      selected: false
+                  });
+              }
+          }
+      }
+
         async function renderTable() { 
           if (layout.qSelectionInfo.qInSelections) {
             return;
