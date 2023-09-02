@@ -18,6 +18,7 @@ export default function supernova(galaxy) {
       const sheetObj =[];
       let selectAllToggle = true;
       let storedData
+      
       function saveCheckboxStates() {
         const checkboxStates = {};
         const checkboxes = element.querySelectorAll('input[type="checkbox"]');
@@ -26,6 +27,7 @@ export default function supernova(galaxy) {
         });
          localStorage.setItem('checkboxStates', JSON.stringify(checkboxStates));
       }
+
       async function buildData() {
        
         if(localStorage.getItem('checkboxStates')){
@@ -81,16 +83,16 @@ export default function supernova(galaxy) {
               let qtitle;
   
               if (containerLayout.title) {
-                  qtitle = "container " + containerLayout.title;
+                  qtitle = containerLayout.title;
               } else {
-                  qtitle = "container " + containerLayout.qInfo.qType;
+                  qtitle = containerLayout.qInfo.qId;
               }
   
               if (storedData.hasOwnProperty(containerLayout.qInfo.qId)) {
                   sheetObj.push({
                       qId: containerLayout.qInfo.qId,
                       qTitle: qtitle,
-                      qType: containerLayout.qInfo.qType,
+                      qType: "container " + containerLayout.qInfo.qType,
                       sheet: layout.qMeta.title,
                       published: layout.qMeta.published,
                       selected: storedData[containerLayout.qInfo.qId] ? "checked" : false
@@ -99,7 +101,7 @@ export default function supernova(galaxy) {
                   sheetObj.push({
                       qId: containerLayout.qInfo.qId,
                       qTitle: qtitle,
-                      qType: containerLayout.qInfo.qType,
+                      qType: "container " + containerLayout.qInfo.qType,
                       sheet: layout.qMeta.title,
                       published: layout.qMeta.published,
                       selected: false
@@ -142,7 +144,7 @@ export default function supernova(galaxy) {
                   )
                   .then(async function (retVal) {
                     var qUrl = retVal.result ? retVal.result.qUrl : retVal.qUrl;
-                    var link = getBasePath() + qUrl;// Replace with your Excel file URL
+                    var link = getBasePath() + qUrl;
                   const response = await fetch(link);
                   const blob = await response.blob();
                   const newBlob = new Blob([blob], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
@@ -169,121 +171,137 @@ export default function supernova(galaxy) {
           };
 
           const togglePublishedButton = document.createElement('button');
-                  togglePublishedButton.textContent = 'Toggle Published';
-                  togglePublishedButton.classList.add('btn', 'btn-secondary');
-                  togglePublishedButton.style.marginRight = '2px'; 
-                  let publishedVisible = true; 
+          togglePublishedButton.textContent = 'Toggle Published';
+          togglePublishedButton.classList.add('btn', 'btn-secondary');
+          togglePublishedButton.style.marginRight = '2px'; 
+          let publishedVisible = false; 
+          togglePublishedButton.addEventListener('click', button1);
 
-                  togglePublishedButton.addEventListener('click', () => {
-                    const tableBody = element.querySelector('tbody');
-                    sheetObj.forEach(row => {
+
+          const hideTypeButton = document.createElement('button');
+          hideTypeButton.textContent = 'Toggle Non-Tables';
+          hideTypeButton.classList.add('btn', 'btn-secondary');
+          hideTypeButton.style.marginRight = '2px'; 
+          let hideType = false;
+          hideTypeButton.addEventListener('click', button2);
+
+          function button1() {
+            publishedVisible = !publishedVisible;
+            if (publishedVisible) {
+              togglePublishedButton.classList.add('btn-success'); 
+              togglePublishedButton.classList.remove('btn-secondary');
+            } else {
+                togglePublishedButton.classList.remove('btn-success');
+                togglePublishedButton.classList.add('btn-secondary'); 
+            }
+            buttonControl() 
+          }
+          function button2() {
+            hideType = !hideType;
+            if (hideType) {
+              hideTypeButton.classList.add('btn-success');
+              hideTypeButton.classList.remove('btn-secondary'); 
+            } else {
+              hideTypeButton.classList.remove('btn-success'); 
+              hideTypeButton.classList.add('btn-secondary');
+            }
+            buttonControl() 
+          }
+          function buttonControl() {
+              showAllRecords() 
+              togglePublished()
+              if(hideType){
+                hideTypeFn()
+              }
+              
+          }
+          function showAllRecords() {
+            const tableBody = element.querySelector('tbody');
+            sheetObj.forEach(row => {
+              const rowElement = tableBody.querySelector(`tr[data-qid="${row.qId}"]`);
+              if (rowElement) {
+                rowElement.style.display = '';
+              }
+            });
+          }
+          function togglePublished() {
+            const tableBody = element.querySelector('tbody');
+            sheetObj.forEach(row => {
+              const rowElement = tableBody.querySelector(`tr[data-qid="${row.qId}"]`);
+              if (rowElement) {
+                if (row.published) {
+                  rowElement.style.display = '';
+                } else {
+                  rowElement.style.display = publishedVisible ? 'none' : '';
+                }
+              }
+            });
+          }
+          function hideTypeFn() {
+            const tableBody = element.querySelector('tbody');
+              if (!hideType) {
+                  sheetObj.forEach(row => {
                       const rowElement = tableBody.querySelector(`tr[data-qid="${row.qId}"]`);
                       if (rowElement) {
-                        if (row.published) {
                           rowElement.style.display = '';
-                        } else {
-                          rowElement.style.display = publishedVisible ? 'none' : '';
-                        }
                       }
-                    });
-                    publishedVisible = !publishedVisible;
                   });
-                  const exportbutton = document.createElement('button');
-                          exportbutton.textContent = 'Export';
-                          exportbutton.classList.add('btn', 'btn-success');
-                          exportbutton.style.marginLeft = '5px'; 
-                          exportbutton.addEventListener('click', () => {
-                              const exportID = [];
-                              checkboxes.forEach(checkbox => {
-                                  const correspondingRow = sheetObj.find(row => row.qId === checkbox.id);
-                                  if (correspondingRow && checkbox.checked) {
-                                      const rowElement = element.querySelector(`tr[data-qid="${correspondingRow.qId}"]`);
-                                      if (rowElement && rowElement.style.display !== 'none') {
-                                          exportID.push(correspondingRow);
-                                      }
-                                  }
-                              });
-                                exportData(exportID);
-                          });
-                    
-
-
-                const hideTypeButton = document.createElement('button');
-                hideTypeButton.textContent = 'Toggle Non-Tables';
-                hideTypeButton.classList.add('btn', 'btn-secondary');
-                hideTypeButton.style.marginRight = '2px'; 
-            
-                let hideType = false; // Track the hide state
-            
-                hideTypeButton.addEventListener('click', () => {
-                    const tableBody = element.querySelector('tbody');
-                    if (hideType) {
-                        // Show all rows when filter is already applied
-                        sheetObj.forEach(row => {
-                            const rowElement = tableBody.querySelector(`tr[data-qid="${row.qId}"]`);
-                            if (rowElement) {
-                                rowElement.style.display = '';
-                            }
-                        });
-                        hideType = false;
-                    } else {
-                        // Apply filter to hide rows other than 'table' and 'kpi'
-                        sheetObj.forEach(row => {
-                            const rowElement = tableBody.querySelector(`tr[data-qid="${row.qId}"]`);
-                            if (rowElement && (row.qType !== 'table' && row.qType !== 'pivot-table')) {
-                                rowElement.style.display = 'none';
-                            }
-                        });
-                        hideType = true;
-                    }
-                });
-
-                const toggleAllButton = document.createElement('button');
-                toggleAllButton.textContent = 'Toggle All';
-                toggleAllButton.classList.add('btn', 'btn-secondary');
-                toggleAllButton.style.marginRight = '2px'; 
-                toggleAllButton.addEventListener('click', () => {
-                  checkboxes.forEach(checkbox => {
+                  // hideType = false;
+              } else {
+                  sheetObj.forEach(row => {
+                      const rowElement = tableBody.querySelector(`tr[data-qid="${row.qId}"]`);
+                      if (rowElement && (row.qType !== 'table' && row.qType !== 'pivot-table')) {
+                          rowElement.style.display = 'none';
+                      }
+                  });
+                  // hideType = true;
+                }
+          }
+          
+          
+          const exportbutton = document.createElement('button');
+            exportbutton.textContent = 'Export';
+            exportbutton.classList.add('btn', 'btn-success');
+            exportbutton.style.marginLeft = '5px'; 
+            exportbutton.addEventListener('click', () => {
+                const exportID = [];
+                checkboxes.forEach(checkbox => {
                     const correspondingRow = sheetObj.find(row => row.qId === checkbox.id);
-                    if (correspondingRow) {
-                        checkbox.checked = selectAllToggle;
-                        correspondingRow.selected = checkbox.checked;
+                    if (correspondingRow && checkbox.checked) {
+                      const rowElement = element.querySelector(`tr[data-qid="${correspondingRow.qId}"]`);
+                        if (rowElement && rowElement.style.display !== 'none') {
+                            exportID.push(correspondingRow);
+                        }
                     }
                   });
-                  selectAllToggle = !selectAllToggle;
+                  exportData(exportID);
                 });
-              
-                // async function test(){
-                //   const fileUrl = "http://localhost:4848/Exports/6ad9cff4-81e3-4feb-942e-c462f7e1fde4/6f37cec8-eda3-4bd8-9768-80b29955971c.xlsx"; // Replace with your Excel file URL
-                //   const response = await fetch(fileUrl);
-                //   const blob = await response.blob();
-                //   const newBlob = new Blob([blob], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-                //    newBlob.download  = 'custom_filename.xlsx';
-                //   const newBlobUrl = URL.createObjectURL(newBlob);
-                //   const link = document.createElement('a');
-                //   link.href = newBlobUrl;
-                //   link.download = 'custom_filename.xlsx';
-                //   link.click();
-                //   URL.revokeObjectURL(newBlobUrl);
-                //   // document.body.removeChild(link);
-                // }
+                 
+          
 
-                const testbutton = document.createElement('button');
-                testbutton.textContent = 'test';
-                testbutton.style.marginLeft = '5px'; 
-                testbutton.addEventListener('click', () => {
-                      test()
-                    });     
+            const toggleAllButton = document.createElement('button');
+            toggleAllButton.textContent = 'Toggle All';
+            toggleAllButton.classList.add('btn', 'btn-secondary');
+            toggleAllButton.style.marginRight = '2px'; 
+            toggleAllButton.addEventListener('click', () => {
+              checkboxes.forEach(checkbox => {
+                const correspondingRow = sheetObj.find(row => row.qId === checkbox.id);
+                if (correspondingRow) {
+                    checkbox.checked = selectAllToggle;
+                    correspondingRow.selected = checkbox.checked;
+                }
+              });
+              selectAllToggle = !selectAllToggle;
+            });
 
           const buttonContainer = document.createElement('div');
-          // buttonContainer.appendChild(testbutton);
           buttonContainer.appendChild(toggleAllButton);
           buttonContainer.appendChild(togglePublishedButton); 
           buttonContainer.appendChild(hideTypeButton);
           buttonContainer.appendChild(exportbutton);
           
           const tableContainer = document.createElement('div');
-          tableContainer.style.overflowX = 'auto'; // Enable horizontal scrolling if necessary
+          tableContainer.style.overflowX = 'auto'; 
           tableContainer.style.maxHeight = '90%'; 
           element.appendChild(buttonContainer);
           element.appendChild(tableContainer);
@@ -293,21 +311,20 @@ export default function supernova(galaxy) {
                           <th scope="col"> Type</th>
                           <th  scope="col"> Published</th></tr>
                         </thead>`;
-            const sheetArray = await buildData()
-            const rows = sheetArray
+          const sheetArray = await buildData()
+          const rows = sheetArray
                             .map((row) => `<tr data-qid="${row.qId}">
                               <td><input class='form-check-input'
-                                type="checkbox" value=${row.selected} id=${row.qId} ${row.selected}></td>
+                              type="checkbox" value=${row.selected} id=${row.qId} ${row.selected}></td>
                               <td>${row.qTitle}</td>
                               <td>${row.sheet}</td>
                               <td>${row.qType}</td>
                               <td>${row.published}</td>
                             </tr>`).join('');
-            const table = `<table class="table">${header}<tbody>${rows}</tbody></table>`;
-            tableContainer.innerHTML = table;
-          
-        const checkboxes = element.querySelectorAll('input[type="checkbox"]');
-        checkboxes.forEach(checkbox => {
+          const table = `<table class="table">${header}<tbody>${rows}</tbody></table>`;
+          tableContainer.innerHTML = table;
+          const checkboxes = element.querySelectorAll('input[type="checkbox"]');
+          checkboxes.forEach(checkbox => {
           const correspondingRow = sheetObj.find(row => row.qId === checkbox.id);
           if (correspondingRow) {
             checkbox.addEventListener('click', () => {
