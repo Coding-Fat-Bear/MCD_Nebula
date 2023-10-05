@@ -43,7 +43,11 @@ export default function supernova(galaxy) {
           for (const layout of sheetListLayout) {
             for (const arr of layout.qChildList.qItems) {
               let qtitle;
-              if (arr.qInfo.qType !== 'MCD' && arr.qInfo.qType !== 'container') {
+              if (arr.qInfo.qType !== 'MCD' && arr.qInfo.qType !== 'container' && (arr.qInfo.qType === 'barchart'|| arr.qInfo.qType === 'boxplot' || arr.qInfo.qType === 'bulletchart'
+              || arr.qInfo.qType === 'combochart' || arr.qInfo.qType === 'distributionplot' || arr.qInfo.qType === 'gauge' || arr.qInfo.qType === 'histogram' || arr.qInfo.qType === 'linechart'
+              || arr.qInfo.qType === 'mekkochart' || arr.qInfo.qType === 'piechart'  || arr.qInfo.qType === 'pivot-table'  || arr.qInfo.qType === 'scatterplot'  || arr.qInfo.qType === 'table'
+              || arr.qInfo.qType === 'text-image' || arr.qInfo.qType === 'treemap' || arr.qInfo.qType === 'waterfallchart')) {
+                
                 if(arr.qData.title) { qtitle = arr.qData.title}else{ qtitle = arr.qInfo.qId}
                 if(storedData.hasOwnProperty(arr.qInfo.qId)){
                   sheetObj.push({
@@ -87,25 +91,29 @@ export default function supernova(galaxy) {
               } else {
                   qtitle = containerLayout.qInfo.qId;
               }
-  
-              if (storedData.hasOwnProperty(containerLayout.qInfo.qId)) {
-                  sheetObj.push({
-                      qId: containerLayout.qInfo.qId,
-                      qTitle: qtitle,
-                      qType: "container " + containerLayout.qInfo.qType,
-                      sheet: layout.qMeta.title,
-                      published: layout.qMeta.published,
-                      selected: storedData[containerLayout.qInfo.qId] ? "checked" : false
-                  });
-              } else {
-                  sheetObj.push({
-                      qId: containerLayout.qInfo.qId,
-                      qTitle: qtitle,
-                      qType: "container " + containerLayout.qInfo.qType,
-                      sheet: layout.qMeta.title,
-                      published: layout.qMeta.published,
-                      selected: false
-                  });
+              if( arr.qInfo.qType !== 'MCD' && arr.qInfo.qType !== 'container' && (arr.qInfo.qType === 'barchart'|| arr.qInfo.qType === 'boxplot' || arr.qInfo.qType === 'bulletchart'
+              || arr.qInfo.qType === 'combochart' || arr.qInfo.qType === 'distributionplot' || arr.qInfo.qType === 'gauge' || arr.qInfo.qType === 'histogram' || arr.qInfo.qType === 'linechart'
+              || arr.qInfo.qType === 'mekkochart' || arr.qInfo.qType === 'piechart'  || arr.qInfo.qType === 'pivot-table'  || arr.qInfo.qType === 'scatterplot'  || arr.qInfo.qType === 'table'
+              || arr.qInfo.qType === 'text-image' || arr.qInfo.qType === 'treemap' || arr.qInfo.qType === 'waterfallchart')){
+                if (storedData.hasOwnProperty(containerLayout.qInfo.qId)) {
+                    sheetObj.push({
+                        qId: containerLayout.qInfo.qId,
+                        qTitle: qtitle,
+                        qType: "container " + containerLayout.qInfo.qType,
+                        sheet: layout.qMeta.title,
+                        published: layout.qMeta.published,
+                        selected: storedData[containerLayout.qInfo.qId] ? "checked" : false
+                    });
+                } else {
+                    sheetObj.push({
+                        qId: containerLayout.qInfo.qId,
+                        qTitle: qtitle,
+                        qType: "container " + containerLayout.qInfo.qType,
+                        sheet: layout.qMeta.title,
+                        published: layout.qMeta.published,
+                        selected: false
+                    });
+                }
               }
           }
       }
@@ -258,7 +266,6 @@ export default function supernova(galaxy) {
                 }
           }
           
-          
           const exportbutton = document.createElement('button');
             exportbutton.textContent = 'Export';
             exportbutton.classList.add('btn', 'btn-success');
@@ -297,7 +304,7 @@ export default function supernova(galaxy) {
           const buttonContainer = document.createElement('div');
           buttonContainer.appendChild(toggleAllButton);
           buttonContainer.appendChild(togglePublishedButton); 
-          buttonContainer.appendChild(hideTypeButton);
+          // buttonContainer.appendChild(hideTypeButton);
           buttonContainer.appendChild(exportbutton);
           
           const tableContainer = document.createElement('div');
